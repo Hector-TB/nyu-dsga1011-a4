@@ -13,6 +13,7 @@ import argparse
 from nltk.corpus import wordnet
 from nltk import word_tokenize
 from nltk.tokenize.treebank import TreebankWordDetokenizer
+import random
 
 random.seed(0)
 
@@ -33,19 +34,41 @@ def example_transform(example):
 # something called synsets (which stands for synonymous words) and for each of them, lemmas() should give you a possible synonym word.
 # You can randomly select each word with some fixed probability to replace by a synonym.
 
+KEYBOARD_NEIGHBORS = {
+    "q": "wa",     "w": "qeas",    "e": "wrsd",    "r": "etdf",    "t": "ryfg",
+    "y": "tugh",   "u": "yihj",    "i": "uojk",    "o": "ipkl",    "p": "ol",
+    "a": "qwsz",   "s": "qweadzx", "d": "werfsxc", "f": "ertdgcv", "g": "rtyfhvb",
+    "h": "tyugjbn","j": "yuihknm", "k": "uiojlm",  "l": "iopk",
+    "z": "asx",    "x": "zsdc",    "c": "xdfv",    "v": "cfgb",    "b": "vghn",
+    "n": "bhjm",   "m": "njk",
+}
 
 def custom_transform(example):
-    ################################
-    ##### YOUR CODE BEGINGS HERE ###
-
-    # Design and implement the transformation as mentioned in pdf
-    # You are free to implement any transformation but the comments at the top roughly describe
-    # how you could implement two of them --- synonym replacement and typos.
-
-    # You should update example["text"] using your transformation
-
-    raise NotImplementedError
-
-    ##### YOUR CODE ENDS HERE ######
-
+    words = example['text'].split()
+    new_words = []
+    for word in words:
+        if random.random() < 0.5:
+            if len(word) < 3:
+                new_words.append(word)
+                continue
+            action = random.choice(['typo', 'swap', 'delete', 'insert'])
+            letter_i = random.randrange(len(word))
+            if action == 'typo':
+                if word[letter_i].lower() in KEYBOARD_NEIGHBORS:
+                    replacement = random.choice(KEYBOARD_NEIGHBORS[word[letter_i].lower()])
+                    new_words.append(word[:letter_i] + replacement + word[letter_i + 1:])
+                else:
+                    new_words.append(word)
+            elif action == 'swap':
+                if letter_i < len(word)-1:
+                    new_words.append(word[:letter_i] + word[letter_i+1] + word[letter_i] + word[letter_i+2:])
+                else:
+                    new_words.append(word[:letter_i-1] + word[letter_i] + word[letter_i-1])
+            elif action == 'delete':
+                new_words.append(word[:letter_i] + word[letter_i + 1:])
+            else:
+                new_words.append(word[:letter_i] + word[letter_i] + word[letter_i] + word[letter_i + 1:])
+        else:
+            new_words.append(word)
+    example['text'] = ' '.join(new_words)
     return example

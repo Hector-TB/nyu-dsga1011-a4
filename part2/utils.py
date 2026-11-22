@@ -92,7 +92,7 @@ def compute_records(processed_qs: List[str]):
         * processed_qs (List[str]): The list of SQL queries to execute
     '''
     num_threads = 10
-    timeout_secs = 120
+    timeout_secs = 300
 
     pool = ThreadPoolExecutor(num_threads)
     futures = []
@@ -122,8 +122,12 @@ def compute_records(processed_qs: List[str]):
             
     return recs, error_msgs
 
+import time
+
 def compute_record(query_id, query):
     conn = sqlite3.connect(DB_PATH)
+    start = time.time()
+    conn.set_progress_handler(lambda: 1 if time.time() - start > 20 else 0, 100000)
     cursor = conn.cursor()
 
     try:
