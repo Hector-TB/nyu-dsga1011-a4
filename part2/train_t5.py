@@ -118,6 +118,7 @@ def train_epoch(args, model, train_loader, optimizer, scheduler):
         non_pad = decoder_targets != PAD_IDX
         loss = criterion(logits[non_pad], decoder_targets[non_pad])
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
         if scheduler is not None: 
             scheduler.step()
@@ -163,7 +164,7 @@ def eval_epoch(args, model, dev_loader, gt_sql_pth, model_sql_path, gt_record_pa
             num_tokens = torch.sum(non_pad).item()
             total_loss += loss.item() * num_tokens
             total_tokens += num_tokens
-            output_ids = model.generate(input_ids=encoder_input, attention_mask=encoder_mask, decoder_input_ids=initial_decoder_inputs, max_new_tokens=512, num_beams=1)
+            output_ids = model.generate(input_ids=encoder_input, attention_mask=encoder_mask, decoder_input_ids=initial_decoder_inputs, decoder_start_token_id=32099, max_new_tokens=512, num_beams=1)
             texts = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
             texts = [text.replace('less_than', '<') for text in texts]
             output_texts.extend(texts)
@@ -187,7 +188,7 @@ def test_inference(args, model, test_loader, model_sql_path, model_record_path):
             encoder_mask = encoder_mask.to(DEVICE)
             initial_decoder_inputs = initial_decoder_inputs.to(DEVICE)
 
-            output_ids = model.generate(input_ids=encoder_input, attention_mask=encoder_mask, decoder_input_ids=initial_decoder_inputs, max_new_tokens=512, num_beams=1)
+            output_ids = model.generate(input_ids=encoder_input, attention_mask=encoder_mask, decoder_input_ids=initial_decoder_inputs, decoder_start_token_id=32099, max_new_tokens=512, num_beams=1)
             texts = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
             texts = [text.replace('less_than', '<') for text in texts]
             output_texts.extend(texts)
